@@ -1,96 +1,96 @@
-import math
-import random
-
 import pygame
 
 from videogame import settings
+from videogame.entities import Chaser, Cookie, Player
+
+MODES = [
+    ("Classic", "Eat cookies at your own pace."),
+    ("Challenge", f"{settings.CHALLENGE_TIME} seconds. Avoid burnt cookies and the angry ones!"),
+]
 
 
-def random_chips(radius, count):
-    """Chip offsets (relative to the cookie center) scattered inside the cookie."""
-    chips = []
-    for _ in range(count):
-        angle = random.uniform(0, 2 * math.pi)
-        dist = random.uniform(0, radius * 0.7)
-        chips.append(pygame.Vector2(math.cos(angle), math.sin(angle)) * dist / radius)
-    return chips
+class Round:
+    """One play-through of a mode, from start until time runs out or the player is caught."""
 
+    def __init__(self, mode):
+        self.mode = mode
+        self.challenge = mode == "Challenge"
+        self.player = Player(settings.WIDTH / 2, settings.HEIGHT / 2)
+        self.cookies = [self.new_cookie() for _ in range(settings.COOKIE_COUNT)]
+        self.score = 0
+        self.result = None  # set to a message when the round ends
+        if self.challenge:
+            self.cookies += [self.new_cookie(burnt=True) for _ in range(settings.BURNT_COUNT)]
+            self.chasers = [Chaser(self.player.pos) for _ in range(settings.CHASER_COUNT)]
+            self.time_left = settings.CHALLENGE_TIME
+        else:
+            self.chasers = []
+            self.time_left = None
 
-def draw_cookie(surface, center, radius, chips):
-    pygame.draw.circle(surface, settings.EDGE_COLOR, center, radius)
-    pygame.draw.circle(surface, settings.DOUGH_COLOR, center, radius * 0.88)
-    chip_radius = max(2, radius * 0.12)
-    for offset in chips:
-        pygame.draw.circle(surface, settings.CHIP_COLOR, center + offset * radius, chip_radius)
-
-
-class Cookie:
-    def __init__(self, avoid_pos, avoid_radius):
-        self.radius = settings.COOKIE_RADIUS
-        self.chips = random_chips(self.radius, 3)
-        margin = self.radius + 10
-        # Don't spawn right on top of the player.
-        while True:
-            self.pos = pygame.Vector2(
-                random.uniform(margin, settings.WIDTH - margin),
-                random.uniform(margin, settings.HEIGHT - margin),
-            )
-            if self.pos.distance_to(avoid_pos) > avoid_radius + self.radius + 40:
-                break
-
-    def draw(self, surface):
-        draw_cookie(surface, self.pos, self.radius, self.chips)
-
-
-class Player:
-    def __init__(self, x, y):
-        self.pos = pygame.Vector2(x, y)
-        self.radius = settings.PLAYER_RADIUS
-        # Chips around the rim so they don't clutter the face.
-        self.chips = [
-            pygame.Vector2(math.cos(a), math.sin(a)) * 0.72
-            for a in (i * 2 * math.pi / 7 + 0.3 for i in range(7))
-        ]
-        self.facing = pygame.Vector2(1, 0)
-        self.chomp_timer = 0.0
+    def new_cookie(self, burnt=False):
+        return Cookie(self.player.pos, self.player.radius, burnt)
 
     def update(self, dt):
-        keys = pygame.key.get_pressed()
-        direction = pygame.Vector2(
-            (keys[pygame.K_RIGHT] or keys[pygame.K_d]) - (keys[pygame.K_LEFT] or keys[pygame.K_a]),
-            (keys[pygame.K_DOWN] or keys[pygame.K_s]) - (keys[pygame.K_UP] or keys[pygame.K_w]),
-        )
-        if direction.length_squared() > 0:
-            direction = direction.normalize()
-            self.facing = direction
-        self.pos += direction * settings.PLAYER_SPEED * dt
-        self.pos.x = max(self.radius, min(settings.WIDTH - self.radius, self.pos.x))
-        self.pos.y = max(self.radius, min(settings.HEIGHT - self.radius, self.pos.y))
-        self.chomp_timer = max(0.0, self.chomp_timer - dt)
+        if self.result:
+            return
+        self.player.update(dt)
 
-    def eat(self):
-        self.radius = min(settings.PLAYER_MAX_RADIUS, self.radius + settings.PLAYER_GROWTH)
-        self.chomp_timer = 0.15
+        for cookie in self.cookies[:]:
+            if self.player.pos.distance_to(cookie.pos) < self.player.radius:
+                self.cookies.remove(cookie)
+                self.cookies.append(self.new_cookie(cookie.burnt))
+                self.player.eat(cookie)
+                if not cookie.burnt:
+                    self.score += 1
 
-    def draw(self, surface):
-        draw_cookie(surface, self.pos, self.radius, self.chips)
+        for chaser in self.chasers:
+            chaser.update(dt, self.player.pos)
+            if chaser.touches(self.player):
+                self.result = "You got eaten!"
 
-        # The face looks at the viewer and shifts slightly toward the movement direction.
-        r = self.radius
-        look = self.facing * r * 0.15
-        for s in (-1, 1):
-            eye = self.pos + pygame.Vector2(s * r * 0.32, -r * 0.22) + look
-            pygame.draw.circle(surface, (255, 255, 255), eye, r * 0.18)
-            pygame.draw.circle(surface, (0, 0, 0), eye + self.facing * r * 0.07, r * 0.09)
+        if self.time_left is not None and not self.result:
+            self.time_left = max(0.0, self.time_left - dt)
+            if self.time_left == 0:
+                self.result = "Time's up!"
 
-        # Mouth: wide open right after a bite, otherwise a smile.
-        mouth_center = self.pos + pygame.Vector2(0, r * 0.32) + look
-        if self.chomp_timer > 0:
-            pygame.draw.circle(surface, (80, 20, 20), mouth_center, r * 0.3)
-        else:
-            smile = pygame.Rect(0, 0, r * 0.7, r * 0.45)
-            smile.center = (round(mouth_center.x), round(mouth_center.y - r * 0.12))
-            pygame.draw.arc(surface, (80, 20, 20), smile, math.pi * 1.1, math.pi * 1.9, max(3, round(r * 0.11)))
+    def draw(self, screen, fonts):
+        screen.fill(settings.BG_COLOR)
+        for cookie in self.cookies:
+            cookie.draw(screen)
+        self.player.draw(screen)
+        for chaser in self.chasers:
+            chaser.draw(screen)
+
+        screen.blit(fonts["hud"].render(f"Cookies: {self.score}", True, settings.TEXT_COLOR), (16, 12))
+        if self.time_left is not None:
+            color = settings.HIGHLIGHT_COLOR if self.time_left < 5 else settings.TEXT_COLOR
+            timer = fonts["hud"].render(f"Time: {self.time_left:4.1f}", True, color)
+            screen.blit(timer, timer.get_rect(topright=(settings.WIDTH - 16, 12)))
+
+        if self.result:
+            overlay = pygame.Surface((settings.WIDTH, settings.HEIGHT), pygame.SRCALPHA)
+            overlay.fill(settings.OVERLAY_COLOR)
+            screen.blit(overlay, (0, 0))
+            draw_centered(screen, fonts["title"], self.result, settings.HEIGHT / 2 - 60)
+            draw_centered(screen, fonts["hud"], f"Cookies eaten: {self.score}", settings.HEIGHT / 2 + 10)
+            draw_centered(screen, fonts["small"], "Enter: play again    Esc: menu", settings.HEIGHT / 2 + 70)
+
+
+def draw_centered(screen, font, text, y, color=settings.TEXT_COLOR):
+    surface = font.render(text, True, color)
+    screen.blit(surface, surface.get_rect(center=(settings.WIDTH / 2, y)))
+
+
+def draw_menu(screen, fonts, selected):
+    screen.fill(settings.BG_COLOR)
+    draw_centered(screen, fonts["title"], settings.TITLE, 120)
+    for i, (name, description) in enumerate(MODES):
+        y = 250 + i * 90
+        color = settings.HIGHLIGHT_COLOR if i == selected else settings.TEXT_COLOR
+        marker = "> " if i == selected else ""
+        draw_centered(screen, fonts["hud"], f"{marker}{i + 1}. {name}", y, color)
+        draw_centered(screen, fonts["small"], description, y + 32)
+    draw_centered(screen, fonts["small"], "Up/Down + Enter to choose    Esc: quit", settings.HEIGHT - 40)
 
 
 def main():
@@ -98,11 +98,14 @@ def main():
     screen = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
     pygame.display.set_caption(settings.TITLE)
     clock = pygame.time.Clock()
-    font = pygame.font.Font(None, 40)
+    fonts = {
+        "title": pygame.font.Font(None, 72),
+        "hud": pygame.font.Font(None, 40),
+        "small": pygame.font.Font(None, 28),
+    }
 
-    player = Player(settings.WIDTH / 2, settings.HEIGHT / 2)
-    cookies = [Cookie(player.pos, player.radius) for _ in range(settings.COOKIE_COUNT)]
-    score = 0
+    selected = 0
+    current = None  # the Round being played, or None while in the menu
 
     running = True
     while running:
@@ -110,23 +113,30 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
+            elif event.type != pygame.KEYDOWN:
+                continue
+            elif current is None:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                elif event.key in (pygame.K_UP, pygame.K_w):
+                    selected = (selected - 1) % len(MODES)
+                elif event.key in (pygame.K_DOWN, pygame.K_s):
+                    selected = (selected + 1) % len(MODES)
+                elif event.key in (pygame.K_1, pygame.K_2):
+                    selected = event.key - pygame.K_1
+                    current = Round(MODES[selected][0])
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    current = Round(MODES[selected][0])
+            elif event.key == pygame.K_ESCAPE:
+                current = None
+            elif current.result and event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                current = Round(current.mode)
 
-        player.update(dt)
-
-        for cookie in cookies[:]:
-            if player.pos.distance_to(cookie.pos) < player.radius:
-                cookies.remove(cookie)
-                cookies.append(Cookie(player.pos, player.radius))
-                player.eat()
-                score += 1
-
-        screen.fill(settings.BG_COLOR)
-        for cookie in cookies:
-            cookie.draw(screen)
-        player.draw(screen)
-        screen.blit(font.render(f"Cookies: {score}", True, settings.TEXT_COLOR), (16, 12))
+        if current is None:
+            draw_menu(screen, fonts, selected)
+        else:
+            current.update(dt)
+            current.draw(screen, fonts)
         pygame.display.flip()
 
     pygame.quit()
