@@ -21,7 +21,7 @@ class Round:
         self.result = None  # set to a message when the round ends
         if self.challenge:
             self.cookies += [self.new_cookie(burnt=True) for _ in range(settings.BURNT_COUNT)]
-            self.chasers = [Chaser(self.player.pos) for _ in range(settings.CHASER_COUNT)]
+            self.chasers = [Chaser(self.player.pos, speed) for speed in settings.CHASER_SPEEDS]
             self.time_left = settings.CHALLENGE_TIME
         else:
             self.chasers = []

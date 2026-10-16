@@ -127,8 +127,9 @@ class Player:
 class Chaser:
     """A big angry cookie that walks toward the player."""
 
-    def __init__(self, avoid_pos):
+    def __init__(self, avoid_pos, speed):
         self.radius = settings.CHASER_RADIUS
+        self.speed = speed
         self.chips = rim_chips(8)
         self.pos = random_position(self.radius, avoid_pos, settings.CHASER_SPAWN_DISTANCE)
         self.facing = pygame.Vector2(1, 0)
@@ -137,7 +138,7 @@ class Chaser:
         to_target = target - self.pos
         if to_target.length_squared() > 0:
             self.facing = to_target.normalize()
-            self.pos += self.facing * settings.CHASER_SPEED * dt
+            self.pos += self.facing * self.speed * dt
 
     def touches(self, player):
         # A little forgiveness so grazing the edge doesn't count.
