@@ -1,7 +1,13 @@
+import asyncio
+import sys
+
 import pygame
 
 from videogame import settings
 from videogame.entities import Chaser, Cookie, Player
+
+# Running in the browser (built with pygbag), where there is no window to close.
+WEB = sys.platform == "emscripten"
 
 MODES = [
     ("Classic", "Eat cookies at your own pace. Burnt ones shrink you!"),
@@ -90,10 +96,11 @@ def draw_menu(screen, fonts, selected):
         marker = "> " if i == selected else ""
         draw_centered(screen, fonts["hud"], f"{marker}{i + 1}. {name}", y, color)
         draw_centered(screen, fonts["small"], description, y + 32)
-    draw_centered(screen, fonts["small"], "Up/Down + Enter to choose    Esc: quit", settings.HEIGHT - 40)
+    hint = "Up/Down + Enter to choose" if WEB else "Up/Down + Enter to choose    Esc: quit"
+    draw_centered(screen, fonts["small"], hint, settings.HEIGHT - 40)
 
 
-def main():
+async def run():
     pygame.init()
     screen = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
     pygame.display.set_caption(settings.TITLE)
@@ -116,7 +123,7 @@ def main():
             elif event.type != pygame.KEYDOWN:
                 continue
             elif current is None:
-                if event.key == pygame.K_ESCAPE:
+                if event.key == pygame.K_ESCAPE and not WEB:
                     running = False
                 elif event.key in (pygame.K_UP, pygame.K_w):
                     selected = (selected - 1) % len(MODES)
@@ -138,8 +145,14 @@ def main():
             current.update(dt)
             current.draw(screen, fonts)
         pygame.display.flip()
+        # Hand control back to the browser each frame (no-op on desktop).
+        await asyncio.sleep(0)
 
     pygame.quit()
+
+
+def main():
+    asyncio.run(run())
 
 
 if __name__ == "__main__":
