@@ -28,5 +28,5 @@ BURNT_SHRINK = 6  # radius lost per burnt cookie eaten
 # Challenge mode
 CHALLENGE_TIME = 20  # seconds
 CHASER_RADIUS = 34
-CHASER_SPEEDS = (90, 150)  # pixels per second; one chaser per entry
+CHASER_SPEEDS = (70, 115)  # pixels per second; one chaser per entry
 CHASER_SPAWN_DISTANCE = 300  # minimum distance from the player when spawning
