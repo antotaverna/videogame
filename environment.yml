@@ -1,0 +1,9 @@
+name: videogame
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - pygame-ce
+      - -e .

@@ -1,0 +1,9 @@
+WIDTH = 960
+HEIGHT = 540
+FPS = 60
+TITLE = "videogame"
+
+BG_COLOR = (20, 24, 32)
+PLAYER_COLOR = (240, 200, 80)
+PLAYER_SIZE = 32
+PLAYER_SPEED = 300  # pixels per second
