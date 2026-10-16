@@ -12,6 +12,8 @@ OVERLAY_COLOR = (250, 236, 214, 210)
 LOVE_MESSAGE = "Mi amorcito, ¡te amo!"
 HEART_COLOR = (140, 10, 25)  # dark red
 FLOATING_HEART_COLOR = (165, 30, 40)
+SEAL_COLOR = (255, 255, 255)
+SEAL_OUTLINE_COLOR = (175, 175, 185)
 
 # Cookie palettes: (edge, dough, chips)
 COOKIE_COLORS = ((160, 105, 50), (214, 160, 90), (70, 40, 20))

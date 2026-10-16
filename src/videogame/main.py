@@ -115,19 +115,29 @@ class Intro:
              random.uniform(8, 18), random.uniform(25, 60)]
             for _ in range(25)
         ]
+        # Baby seals floating up more slowly and swaying: [x, y, size, speed, facing, sway phase]
+        self.seals = [
+            [random.uniform(40, settings.WIDTH - 40), random.uniform(0, settings.HEIGHT),
+             random.uniform(19, 27), random.uniform(15, 30), random.choice((-1, 1)),
+             random.uniform(0, 2 * math.pi)]
+            for _ in range(6)
+        ]
 
     def update(self, dt):
         self.time += dt
-        for heart in self.hearts:
-            heart[1] -= heart[3] * dt
-            if heart[1] < -2 * heart[2]:
-                heart[0] = random.uniform(0, settings.WIDTH)
-                heart[1] = settings.HEIGHT + 2 * heart[2]
+        for thing in self.hearts + self.seals:
+            thing[1] -= thing[3] * dt
+            if thing[1] < -2 * thing[2]:
+                thing[0] = random.uniform(40, settings.WIDTH - 40)
+                thing[1] = settings.HEIGHT + 2 * thing[2]
 
     def draw(self, screen, fonts):
         screen.fill(settings.BG_COLOR)
         for x, y, size, _ in self.hearts:
             draw_heart(screen, (x, y), size, settings.FLOATING_HEART_COLOR)
+        for x, y, size, _, facing, phase in self.seals:
+            sway = 12 * math.sin(self.time * 1.5 + phase)
+            draw_seal(screen, (x + sway, y), size, facing)
         beat = 1 + 0.06 * math.sin(self.time * 2 * math.pi * 1.2)
         draw_heart(screen, (settings.WIDTH / 2, 190), 85 * beat, settings.HEART_COLOR)
         # Text sits on a background-colored band so floating hearts pass behind it.
@@ -151,6 +161,50 @@ def draw_heart(surface, center, size, color):
         y = -(13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t))
         points.append((center[0] + x * scale, center[1] + y * scale))
     pygame.draw.polygon(surface, color, points)
+
+
+def draw_seal(surface, center, size, facing=1):
+    """A white baby seal lying on its belly, about 3*size wide; facing is 1 (right) or -1 (left)."""
+    cx, cy = center
+
+    def at(dx, dy):
+        return cx + facing * dx * size, cy + dy * size
+
+    def ellipse_rect(dx, dy, w, h):
+        rect = pygame.Rect(0, 0, w * size, h * size)
+        rect.center = at(dx, dy)
+        return rect
+
+    body_parts = [
+        ellipse_rect(-1.2, 0.05, 0.45, 0.25),  # tail flippers
+        ellipse_rect(-1.2, 0.3, 0.45, 0.25),
+        ellipse_rect(-0.3, 0.2, 1.8, 0.9),  # body
+        ellipse_rect(0.0, 0.62, 0.55, 0.22),  # front flipper
+    ]
+    head, head_r = at(0.45, -0.05), 0.55 * size
+    # Outline everything first, then fill, so the parts merge into one silhouette.
+    line = max(2, round(size * 0.08))
+    for rect in body_parts:
+        pygame.draw.ellipse(surface, settings.SEAL_OUTLINE_COLOR, rect.inflate(2 * line, 2 * line))
+    pygame.draw.circle(surface, settings.SEAL_OUTLINE_COLOR, head, head_r + line)
+    for rect in body_parts:
+        pygame.draw.ellipse(surface, settings.SEAL_COLOR, rect)
+    pygame.draw.circle(surface, settings.SEAL_COLOR, head, head_r)
+
+    # Face
+    for ex in (0.27, 0.65):
+        eye = at(ex, -0.12)
+        pygame.draw.circle(surface, (20, 20, 25), eye, 0.11 * size)
+        pygame.draw.circle(surface, (255, 255, 255), (eye[0] - 0.035 * size, eye[1] - 0.04 * size), 0.04 * size)
+    nose = at(0.47, 0.08)
+    pygame.draw.ellipse(surface, (40, 35, 40), pygame.Rect(0, 0, 0.16 * size, 0.1 * size).move(
+        nose[0] - 0.08 * size, nose[1] - 0.05 * size))
+    whisker = max(1, round(size * 0.03))
+    for side in (-1, 1):
+        for dy in (-0.04, 0.06):
+            start = at(0.47 + side * 0.13, 0.12)
+            end = at(0.47 + side * 0.45, 0.12 + dy)
+            pygame.draw.line(surface, settings.SEAL_OUTLINE_COLOR, start, end, whisker)
 
 
 def draw_centered(screen, font, text, y, color=settings.TEXT_COLOR):
