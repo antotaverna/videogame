@@ -1,5 +1,7 @@
 import asyncio
+import random
 import sys
+import time
 
 import pygame
 
@@ -101,6 +103,10 @@ def draw_menu(screen, fonts, selected):
 
 
 async def run():
+    if WEB:
+        # The browser build starts from the same random state on every page load,
+        # which would put the cookies in the same places each time.
+        random.seed(time.time_ns())
     pygame.init()
     screen = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
     pygame.display.set_caption(settings.TITLE)
