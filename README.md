@@ -1,6 +1,7 @@
 # videogame
 
-A 2D game built with Python and [pygame-ce](https://pyga.me/).
+Cookie eats cookies: a tiny 2D game built with Python and [pygame-ce](https://pyga.me/).
+Move a hungry cookie around, eat the small cookies, and grow.
 
 ## Setup
 
@@ -15,7 +16,7 @@ conda activate videogame
 videogame            # or: python -m videogame.main
 ```
 
-Controls: arrow keys / WASD to move, Esc to quit.
+Controls: arrow keys / WASD to move, Esc to quit. Touch a small cookie to eat it.
 
 ## Layout
 
