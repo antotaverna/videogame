@@ -22,10 +22,11 @@ PLAYER_SPEED = 300  # pixels per second
 COOKIE_RADIUS = 12
 COOKIE_COUNT = 8  # cookies on screen at once
 
-# Challenge mode
-CHALLENGE_TIME = 20  # seconds
 BURNT_COUNT = 3
 BURNT_SHRINK = 6  # radius lost per burnt cookie eaten
+
+# Challenge mode
+CHALLENGE_TIME = 20  # seconds
 CHASER_RADIUS = 34
 CHASER_SPEEDS = (90, 150)  # pixels per second; one chaser per entry
 CHASER_SPAWN_DISTANCE = 300  # minimum distance from the player when spawning

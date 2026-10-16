@@ -4,7 +4,7 @@ from videogame import settings
 from videogame.entities import Chaser, Cookie, Player
 
 MODES = [
-    ("Classic", "Eat cookies at your own pace."),
+    ("Classic", "Eat cookies at your own pace. Burnt ones shrink you!"),
     ("Challenge", f"{settings.CHALLENGE_TIME} seconds. Avoid burnt cookies and the angry ones!"),
 ]
 
@@ -17,10 +17,10 @@ class Round:
         self.challenge = mode == "Challenge"
         self.player = Player(settings.WIDTH / 2, settings.HEIGHT / 2)
         self.cookies = [self.new_cookie() for _ in range(settings.COOKIE_COUNT)]
+        self.cookies += [self.new_cookie(burnt=True) for _ in range(settings.BURNT_COUNT)]
         self.score = 0
         self.result = None  # set to a message when the round ends
         if self.challenge:
-            self.cookies += [self.new_cookie(burnt=True) for _ in range(settings.BURNT_COUNT)]
             self.chasers = [Chaser(self.player.pos, speed) for speed in settings.CHASER_SPEEDS]
             self.time_left = settings.CHALLENGE_TIME
         else:
