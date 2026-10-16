@@ -16,6 +16,8 @@ conda activate videogame
 videogame            # or: python -m videogame.main
 ```
 
+The game opens with a short love note; tap or press any key to continue.
+
 Pick a mode from the menu (tap or click it, or use Up/Down + Enter, or press 1/2):
 
 - **Classic**: eat cookies at your own pace. Touch a small cookie to eat it and grow;

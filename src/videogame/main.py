@@ -1,4 +1,5 @@
 import asyncio
+import math
 import random
 import sys
 import time
@@ -103,6 +104,49 @@ class Round:
             draw_button(screen, fonts["small"], MENU_BUTTON, "Menu")
 
 
+class Intro:
+    """Opening screen with a love note; any key or tap moves on to the menu."""
+
+    def __init__(self):
+        self.time = 0.0
+        # Small hearts floating upward: [x, y, size, speed]
+        self.hearts = [
+            [random.uniform(0, settings.WIDTH), random.uniform(0, settings.HEIGHT),
+             random.uniform(8, 18), random.uniform(25, 60)]
+            for _ in range(25)
+        ]
+
+    def update(self, dt):
+        self.time += dt
+        for heart in self.hearts:
+            heart[1] -= heart[3] * dt
+            if heart[1] < -2 * heart[2]:
+                heart[0] = random.uniform(0, settings.WIDTH)
+                heart[1] = settings.HEIGHT + 2 * heart[2]
+
+    def draw(self, screen, fonts):
+        screen.fill(settings.BG_COLOR)
+        for x, y, size, _ in self.hearts:
+            draw_heart(screen, (x, y), size, settings.SOFT_HEART_COLOR)
+        beat = 1 + 0.06 * math.sin(self.time * 2 * math.pi * 1.2)
+        draw_heart(screen, (settings.WIDTH / 2, 190), 85 * beat, settings.HEART_COLOR)
+        draw_centered(screen, fonts["title"], settings.LOVE_MESSAGE, 370, settings.HEART_COLOR)
+        hint = "Tocá para jugar" if WEB else "Apretá cualquier tecla para jugar"
+        draw_centered(screen, fonts["small"], hint, settings.HEIGHT - 40)
+
+
+def draw_heart(surface, center, size, color):
+    """A filled heart roughly 2*size wide, from the classic parametric heart curve."""
+    scale = size / 16
+    points = []
+    for i in range(48):
+        t = i * 2 * math.pi / 48
+        x = 16 * math.sin(t) ** 3
+        y = -(13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t))
+        points.append((center[0] + x * scale, center[1] + y * scale))
+    pygame.draw.polygon(surface, color, points)
+
+
 def draw_centered(screen, font, text, y, color=settings.TEXT_COLOR):
     surface = font.render(text, True, color)
     screen.blit(surface, surface.get_rect(center=(settings.WIDTH / 2, y)))
@@ -144,6 +188,7 @@ async def run():
         "small": pygame.font.Font(None, 28),
     }
 
+    intro = Intro()  # shown until the first key press or tap, then None
     selected = 0
     current = None  # the Round being played, or None while in the menu
     pointer = None  # where a finger or the mouse button is held down, if anywhere
@@ -171,6 +216,8 @@ async def run():
 
             elif event.type != pygame.KEYDOWN:
                 continue
+            elif intro is not None:
+                intro = None
             elif current is None:
                 if event.key == pygame.K_ESCAPE and not WEB:
                     running = False
@@ -191,7 +238,9 @@ async def run():
         now = time.monotonic()
         if tap is not None and now - last_tap > TAP_COOLDOWN:
             last_tap = now
-            if current is None:
+            if intro is not None:
+                intro = None
+            elif current is None:
                 for i, rect in enumerate(MODE_RECTS):
                     if rect.collidepoint(tap):
                         selected = i
@@ -205,7 +254,10 @@ async def run():
                 current = None
                 pointer = None
 
-        if current is None:
+        if intro is not None:
+            intro.update(dt)
+            intro.draw(screen, fonts)
+        elif current is None:
             draw_menu(screen, fonts, selected)
         else:
             current.update(dt, pointer)

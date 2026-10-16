@@ -8,6 +8,11 @@ TEXT_COLOR = (90, 55, 30)
 HIGHLIGHT_COLOR = (200, 90, 40)
 OVERLAY_COLOR = (250, 236, 214, 210)
 
+# Opening screen
+LOVE_MESSAGE = "Mi amorcito, ¡te amo!"
+HEART_COLOR = (215, 50, 85)
+SOFT_HEART_COLOR = (242, 170, 180)
+
 # Cookie palettes: (edge, dough, chips)
 COOKIE_COLORS = ((160, 105, 50), (214, 160, 90), (70, 40, 20))
 BURNT_COLORS = ((30, 20, 15), (65, 42, 28), (20, 12, 8))
