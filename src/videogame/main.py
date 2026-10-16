@@ -127,12 +127,18 @@ class Intro:
     def draw(self, screen, fonts):
         screen.fill(settings.BG_COLOR)
         for x, y, size, _ in self.hearts:
-            draw_heart(screen, (x, y), size, settings.SOFT_HEART_COLOR)
+            draw_heart(screen, (x, y), size, settings.FLOATING_HEART_COLOR)
         beat = 1 + 0.06 * math.sin(self.time * 2 * math.pi * 1.2)
         draw_heart(screen, (settings.WIDTH / 2, 190), 85 * beat, settings.HEART_COLOR)
-        draw_centered(screen, fonts["title"], settings.LOVE_MESSAGE, 370, settings.HEART_COLOR)
+        # Text sits on a background-colored band so floating hearts pass behind it.
         hint = "Tocá para jugar" if WEB else "Apretá cualquier tecla para jugar"
-        draw_centered(screen, fonts["small"], hint, settings.HEIGHT - 40)
+        for font, text, y, color in (
+            (fonts["title"], settings.LOVE_MESSAGE, 370, settings.HEART_COLOR),
+            (fonts["small"], hint, settings.HEIGHT - 40, settings.TEXT_COLOR),
+        ):
+            band = font.render(text, True, color).get_rect(center=(settings.WIDTH / 2, y)).inflate(40, 16)
+            pygame.draw.rect(screen, settings.BG_COLOR, band, border_radius=band.height // 2)
+            draw_centered(screen, font, text, y, color)
 
 
 def draw_heart(surface, center, size, color):
