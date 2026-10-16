@@ -81,16 +81,24 @@ class Player:
         self.chomp_timer = 0.0
         self.yuck_timer = 0.0
 
-    def update(self, dt):
+    def update(self, dt, target=None):
+        """Move with the keyboard, or toward target (a finger or mouse held down) if given."""
         keys = pygame.key.get_pressed()
         direction = pygame.Vector2(
             (keys[pygame.K_RIGHT] or keys[pygame.K_d]) - (keys[pygame.K_LEFT] or keys[pygame.K_a]),
             (keys[pygame.K_DOWN] or keys[pygame.K_s]) - (keys[pygame.K_UP] or keys[pygame.K_w]),
         )
+        step = settings.PLAYER_SPEED * dt
+        if direction.length_squared() == 0 and target is not None:
+            to_target = target - self.pos
+            if to_target.length() > 4:
+                direction = to_target
+                # Stop on the finger instead of jittering past it.
+                step = min(step, to_target.length())
         if direction.length_squared() > 0:
             direction = direction.normalize()
             self.facing = direction
-        self.pos += direction * settings.PLAYER_SPEED * dt
+        self.pos += direction * step
         self.pos.x = max(self.radius, min(settings.WIDTH - self.radius, self.pos.x))
         self.pos.y = max(self.radius, min(settings.HEIGHT - self.radius, self.pos.y))
         self.chomp_timer = max(0.0, self.chomp_timer - dt)

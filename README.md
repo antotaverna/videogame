@@ -16,14 +16,17 @@ conda activate videogame
 videogame            # or: python -m videogame.main
 ```
 
-Pick a mode from the menu (Up/Down + Enter, or press 1/2):
+Pick a mode from the menu (tap or click it, or use Up/Down + Enter, or press 1/2):
 
 - **Classic**: eat cookies at your own pace. Touch a small cookie to eat it and grow;
   burnt (dark) cookies shrink you.
 - **Challenge**: 20 seconds to eat as many as you can, with burnt cookies too, while
   big angry cookies chase you (one slow, one fast); if one catches you, the round ends.
 
-Controls: arrow keys / WASD to move, Esc to go back to the menu (or quit from the menu).
+Controls:
+- **Keyboard**: arrow keys / WASD to move, Esc to go back to the menu (or quit from the menu).
+- **Touch or mouse**: touch and hold (or click and hold) and the cookie moves toward your finger.
+  Tap a mode to start it, and use the on-screen Menu / Play again buttons.
 
 ## Browser version
 
