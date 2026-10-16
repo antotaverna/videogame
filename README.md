@@ -36,7 +36,8 @@ python -m pygbag --title "Cookie eats cookies" .   # serves it at http://localho
 python -m pygbag --build --title "Cookie eats cookies" .   # just build into src/build/web
 ```
 
-The page needs a click before the game starts (browsers block audio and focus until then).
+Pushing to `main` rebuilds it and publishes it to GitHub Pages
+(`.github/workflows/deploy-web.yml`). The page needs a click before the game starts (browsers block audio and focus until then).
 
 ## Layout
 
